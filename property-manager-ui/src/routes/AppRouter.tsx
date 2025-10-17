@@ -5,6 +5,7 @@ import SignUp from "@/pages/auth/SignUp";
 import SignOut from "@/pages/auth/SignOut";
 import Dashboard from "@/pages/Dashboard";
 import AuthGuard from "@/features/auth/AuthGuard";
+import ProjectExplorer from "@/pages/projectexplorer/ProjectExplorer.tsx";
 
 export default function AppRouter() {
     return (
@@ -13,6 +14,7 @@ export default function AppRouter() {
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route element={<AuthGuard />}>
                     <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path = "/projectExplorer" element={<ProjectExplorer/>}/>
                 </Route>
             </Route>
 
