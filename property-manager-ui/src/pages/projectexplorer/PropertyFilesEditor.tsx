@@ -1,14 +1,16 @@
-import { useMemo, useRef, useState } from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import Editor from "@monaco-editor/react";
-import type { editor as MonacoEditor } from "monaco-editor";
-import { Download, Save, FileType } from "lucide-react";
+import type {editor as MonacoEditor} from "monaco-editor";
+import {Download, Save, FileType, ArrowUpRightIcon} from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
-import { Separator } from "@/components/ui/separator";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
+import {Badge} from "@/components/ui/badge";
+import {Tooltip, TooltipContent, TooltipTrigger, TooltipProvider} from "@/components/ui/tooltip";
+import {Separator} from "@/components/ui/separator";
+import {Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle} from "@/components/ui/empty.tsx";
+import {IconFileCode, IconFolderCode} from "@tabler/icons-react";
 
 interface ApiRoutes {
     property: {
@@ -20,6 +22,7 @@ interface ApiRoutes {
 type FileTypeUnion = "properties" | "yaml" | "env" | "text";
 
 type ToastKind = "success" | "error" | "info";
+
 interface ToastMsg {
     kind: ToastKind;
     text: string;
@@ -39,10 +42,10 @@ const DEFAULT_CONTENT: Record<FileTypeUnion, string> = {
     text: `# Notes...\n`,
 };
 
-export default function PropertyFilesEditor() {
+export default function PropertyFilesEditor({selectedFile}) {
     const [propertyId, setPropertyId] = useState<number | null>(null);
-    const [fileName, setFileName] = useState<string>("application.properties");
-    const [content, setContent] = useState<string>(DEFAULT_CONTENT.properties);
+    const [fileName, setFileName] = useState<string>();
+    const [content, setContent] = useState<string>();
     const [busy, setBusy] = useState<boolean>(false);
     const [toast, setToast] = useState<ToastMsg | null>(null);
     const toastTimerRef = useRef<number | null>(null);
@@ -52,23 +55,28 @@ export default function PropertyFilesEditor() {
     const monacoLanguage = useMemo(() => mapToMonacoLanguage(fileType), [fileType]);
     const downloadMime = useMemo(() => mapToMime(fileType), [fileType]);
 
+    useEffect(() => {
+        setFileName(selectedFile ? selectedFile.name : null)
+        setContent(selectedFile ? selectedFile.content : undefined)
+    },[selectedFile]);
+
     function onMount(editor: MonacoEditor.IStandaloneCodeEditor): void {
         monacoRef.current = editor;
         editor.updateOptions({
             wordWrap: "on",
-            minimap: { enabled: false },
+            minimap: {enabled: false},
             lineNumbers: "on",
             tabSize: 2,
             fontSize: 14,
             cursorBlinking: "smooth",
-            padding: { top: 12 },
+            padding: {top: 12},
             renderWhitespace: "selection",
             scrollBeyondLastLine: false,
         });
     }
 
     function notify(kind: ToastKind, text: string): void {
-        setToast({ kind, text });
+        setToast({kind, text});
         if (toastTimerRef.current !== null) window.clearTimeout(toastTimerRef.current);
         toastTimerRef.current = window.setTimeout(() => setToast(null), 4000);
     }
@@ -84,7 +92,7 @@ export default function PropertyFilesEditor() {
             const isNew = propertyId == null;
             const res = await fetch(isNew ? API.property.create : API.property.update(propertyId), {
                 method: isNew ? "POST" : "PUT",
-                headers: { "Content-Type": "application/json" },
+                headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(payload),
             });
             if (!res.ok) throw new Error(`Save failed (${res.status})`);
@@ -100,7 +108,7 @@ export default function PropertyFilesEditor() {
     }
 
     function handleDownload(): void {
-        const blob = new Blob([content ?? ""], { type: `${downloadMime};charset=utf-8` });
+        const blob = new Blob([content ?? ""], {type: `${downloadMime};charset=utf-8`});
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -113,58 +121,73 @@ export default function PropertyFilesEditor() {
 
     return (
         <TooltipProvider>
-            <div className="min-h-screen bg-neutral-50 p-6">
-                <div className="mx-auto max-w-6xl space-y-4">
+            <div className="h-full p-4 overflow-hidden">
+                <div className="h-full space-y-4 flex flex-col">
                     <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-2xl font-semibold tracking-tight">Property Files Editor</h1>
-                            <p className="text-sm text-muted-foreground">Create & manage properties, YAML, and more — with download and save.</p>
+                            <p className="text-sm text-muted-foreground">Create & manage properties, YAML, and more —
+                                with download and save.</p>
                         </div>
                     </div>
-
-                    <Card className="overflow-hidden">
-                        <CardHeader className="space-y-3">
-                            <CardTitle className="text-base">File</CardTitle>
-                            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-                                <div className="md:col-span-6">
-                                    <label className="mb-1 block text-sm">File name</label>
-                                    <Input
-                                        value={fileName}
-                                        onChange={(e) => setFileName(e.target.value)}
-                                        placeholder="application.properties"
+                    {selectedFile === null ? (
+                        <div className="flex items-center justify-center h-full">
+                            <Empty>
+                                <EmptyHeader>
+                                    <EmptyMedia variant="icon">
+                                        <IconFileCode />
+                                    </EmptyMedia>
+                                    <EmptyTitle>No File Selected</EmptyTitle>
+                                    <EmptyDescription>
+                                        You haven&apos;t selected the file. Select a file from the tree to view its content.
+                                    </EmptyDescription>
+                                </EmptyHeader>
+                            </Empty>
+                        </div>
+                        ) : (
+                        <Card className="overflow-hidden flex-1 flex flex-col min-h-0">
+                            <CardHeader className="space-y-3">
+                                <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                                    <div className="md:col-span-4">
+                                        <label className="mb-1 block text-base">File name</label>
+                                        <p className="text-sm px-3 py-2 border rounded-md bg-muted/30">{fileName}</p>
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="mb-1 block text-sm">Type</label>
+                                        <TypeBadge type={fileType}/>
+                                    </div>
+                                    <div className="md:col-span-6 flex gap-2 md:justify-end">
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button variant="outline" onClick={handleDownload} className="gap-2">
+                                                    <Download className="size-4"/> Download
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>Download as a file</TooltipContent>
+                                        </Tooltip>
+                                        <Button onClick={handleSave} disabled={busy} className="gap-2">
+                                            <Save className="size-4"/> {busy ? "Saving…" : "Save"}
+                                        </Button>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <Separator/>
+                            <CardContent className="p-0 flex-1 min-h-0">
+                                <div className="h-full">
+                                    <Editor
+                                        height="100%"
+                                        language={monacoLanguage}
+                                        value={content}
+                                        onChange={(v) => {
+                                            setContent(v ?? "")
+                                        }}
+                                        onMount={onMount}
+                                        options={{automaticLayout: true}}
                                     />
                                 </div>
-                                <div className="md:col-span-3">
-                                    <label className="mb-1 block text-sm">Type</label>
-                                    <TypeBadge type={fileType} />
-                                </div>
-                                <div className="md:col-span-3 flex gap-2 md:justify-end">
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Button variant="outline" onClick={handleDownload} className="gap-2">
-                                                <Download className="size-4" /> Download
-                                            </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>Download as a file</TooltipContent>
-                                    </Tooltip>
-                                    <Button onClick={handleSave} disabled={busy} className="gap-2">
-                                        <Save className="size-4" /> {busy ? "Saving…" : "Save"}
-                                    </Button>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <Separator />
-                        <CardContent className="p-0">
-                            <Editor
-                                height="60vh"
-                                language={monacoLanguage}
-                                value={content}
-                                onChange={(v) => setContent(v ?? "")}
-                                onMount={onMount}
-                                options={{ automaticLayout: true }}
-                            />
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
+                    )}
 
                     {toast && (
                         <div
@@ -182,18 +205,22 @@ export default function PropertyFilesEditor() {
                 </div>
             </div>
         </TooltipProvider>
-    );
+);
 }
 
 // ---------- helpers ----------
-function TypeBadge({ type }: { type: FileTypeUnion }){
+function TypeBadge({
+    type
+}: {
+    type: FileTypeUnion
+}){
     const label =
         type === "properties" ? ".properties" : type === "yaml" ? ".yml / .yaml" : type === "env" ? ".env" : "Plain text";
     const intent: "default" | "secondary" | "outline" | "destructive" =
         type === "properties" ? "default" : type === "yaml" ? "secondary" : type === "env" ? "outline" : "destructive";
     return (
         <Badge variant={intent} className="inline-flex items-center gap-1">
-            <FileType className="size-3" /> {label}
+            <FileType className="size-3"/> {label}
         </Badge>
     );
 }

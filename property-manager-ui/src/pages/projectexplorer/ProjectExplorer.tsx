@@ -19,7 +19,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import PropertyFilesEditor from "@/pages/projectexplorer/PropertyFilesEditor.tsx";
 
 
-export type PropertyFile = { id: string; name: string; type: "file" };
+export type PropertyFile = { id: string; name: string; type: "file"; content:string;};
 export type BranchNode = {
     id: string;
     name: string;
@@ -46,15 +46,15 @@ const demoData: ProjectNode[] = [
                 name: "branch1",
                 type: "branch",
                 children: [
-                    { id: "p1-b1-file1", name: "file.properties", type: "file" },
-                    { id: "p1-b1-file2", name: "file.properties", type: "file" },
+                    { id: "p1-b1-file1", name: "file.properties", type: "file", content:`app.node=1\napp.cron=0 0/10 * * * *\napp.sendHeartbeat=false\napp.url=https://businessappmanager.ankaref.com\n#app.url=http://127.0.0.1:8992\napp.version=1.0.4\n` },
+                    { id: "p1-b1-file2", name: "file.yml", type: "file", content:`server:\n  port: 8998\n  compression:\n    enabled: true\n` },
                 ],
             },
             {
                 id: "project1-branch2",
                 name: "branch2",
                 type: "branch",
-                children: [{ id: "p1-b2-file1", name: "file.properties", type: "file" }],
+                children: [{ id: "p1-b2-file1", name: "file.properties", type: "file", content:`app.node=1\napp.cron=0 0/10 * * * *\napp.sendHeartbeat=false\napp.url=https://businessappmanager.ankaref.com\n#app.url=http://127.0.0.1:8992\napp.version=1.0.4\n` }],
             },
         ],
     },
@@ -68,15 +68,15 @@ const demoData: ProjectNode[] = [
                 name: "branch1",
                 type: "branch",
                 children: [
-                    { id: "p2-b1-file1", name: "file.properties", type: "file" },
-                    { id: "p2-b1-file2", name: "file.properties", type: "file" },
+                    { id: "p2-b1-file1", name: "file.properties", type: "file", content:`app.node=1\napp.cron=0 0/10 * * * *\napp.sendHeartbeat=false\napp.url=https://businessappmanager.ankaref.com\n#app.url=http://127.0.0.1:8992\napp.version=1.0.4\n` },
+                    { id: "p2-b1-file2", name: "file.properties", type: "file", content:`app.node=1\napp.cron=0 0/10 * * * *\napp.sendHeartbeat=false\napp.url=https://businessappmanager.ankaref.com\n#app.url=http://127.0.0.1:8992\napp.version=1.0.4\n` },
                 ],
             },
             {
                 id: "project2-branch2",
                 name: "branch2",
                 type: "branch",
-                children: [{ id: "p2-b2-file1", name: "file.properties", type: "file" }],
+                children: [{ id: "p2-b2-file1", name: "file.properties", type: "file", content:`app.node=1\napp.cron=0 0/10 * * * *\napp.sendHeartbeat=false\napp.url=https://businessappmanager.ankaref.com\n#app.url=http://127.0.0.1:8992\napp.version=1.0.4\n` }],
             },
         ],
     },
@@ -304,51 +304,34 @@ export default function ProjectExplorer() {
                 </Empty>
             </div>
         ): (
-            <div className="flex h-[80vh] w-full gap-4 min-h-0">
-                {/*/!* Left: File Explorer *!/*/}
-                {/*<Card className="w-[250px] flex flex-col h-full overflow-hidden">*/}
-                {/*    <CardHeader className="py-1">*/}
-                {/*        <div className="flex items-center justify-between">*/}
-                {/*            <CardTitle className="text-base">File Explorer</CardTitle>*/}
-                {/*            <Button*/}
-                {/*                size="sm"*/}
-                {/*                onClick={() => console.log("Add project")}*/}
-                {/*                className="gap-1"*/}
-                {/*                aria-label="Add Project"*/}
-                {/*                title="Add Project"*/}
-                {/*            >*/}
-                {/*                <Plus className="h-4 w-4" />*/}
-                {/*                Add Project*/}
-                {/*            </Button>*/}
-                {/*        </div>*/}
-                {/*    </CardHeader>*/}
-                {/*    <Separator />*/}
-                {/*    <CardContent className="p-0 flex-1 min-h-0">*/}
-                {/*        <ScrollArea className="h-full px-2 py-2">*/}
-                {/*            <FileTree data={projects} onSelectFile={setSelectedFile} />*/}
-                {/*        </ScrollArea>*/}
-                {/*    </CardContent>*/}
-                {/*</Card>*/}
+            <div className="flex h-full w-full gap-4 min-h-0">
+                {/* Left: File Explorer */}
+                <Card className="flex flex-col h-full overflow-hidden gap-2 ">
+                    <CardHeader className="px-3 py-2"> {/* <- add px */}
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="text-base pr-4">File Explorer</CardTitle>
+                            <Button
+                                size="sm"
+                                onClick={() => console.log("Add project")}
+                                className="gap-1 shrink-0" /* keep it from shrinking */
+                                aria-label="Add Project"
+                                title="Add Project"
+                            >
+                                <Plus className="h-4 w-4" />
+                                Add Project
+                            </Button>
+                        </div>
+                    </CardHeader>
+                    <Separator />
+                    <CardContent className="p-0 flex-1 min-h-0">
+                        <ScrollArea className="h-full px-2 py-2">
+                            <FileTree data={projects} onSelectFile={setSelectedFile} />
+                        </ScrollArea>
+                    </CardContent>
+                </Card>
 
-                {/* Right: Placeholder for file content (to be implemented later) */}
-                {/*<Card className="flex-1">*/}
-                {/*    <CardHeader className="py-3">*/}
-                {/*        <CardTitle className="text-base">File Content</CardTitle>*/}
-                {/*    </CardHeader>*/}
-                {/*    <Separator />*/}
-                {/*    <CardContent className="p-4 text-sm text-muted-foreground">*/}
-                {/*        {selectedFile ? (*/}
-                {/*            <div>*/}
-                {/*                <div className="mb-2 text-foreground font-medium">{selectedFile.name}</div>*/}
-                {/*                <p>Display the property file content here (coming next).</p>*/}
-                {/*            </div>*/}
-                {/*        ) : (*/}
-                {/*            <p>Select a property file from the tree to view its content.</p>*/}
-                {/*        )}*/}
-                {/*    </CardContent>*/}
-                {/*</Card>*/}
-                <Card className="flex-1">
-                    <PropertyFilesEditor/>
+                <Card className="flex-1 overflow-hidden flex flex-col min-h-0">
+                  <PropertyFilesEditor selectedFile={selectedFile} />
                 </Card>
             </div>
         ))
